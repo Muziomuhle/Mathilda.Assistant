@@ -11,7 +11,7 @@ namespace Mathilda.Controllers
         private readonly IConfiguration _configuration;
         private readonly IIcsReader _reader;
         private readonly IClockifyService _clockifyService;
-        private readonly string _path;
+        private readonly string _icsFilePath;
 
         public TimeEntryController(ILogger<TimeEntryController> logger, IConfiguration configuration, 
             IIcsReader reader, IClockifyService clockifyService)
@@ -20,7 +20,7 @@ namespace Mathilda.Controllers
             _configuration = configuration;
             _reader = reader;
             _clockifyService = clockifyService;
-            _path = _configuration.GetSection("Paths:Ics").Value;
+            _icsFilePath = _configuration.GetSection("Paths:Ics").Value;
         }
 
         [HttpGet("GetCalendarEvents")]
@@ -40,7 +40,7 @@ namespace Mathilda.Controllers
                 End = End
             };
 
-            var events = await _reader.ParseIcsFile(_path, filter);
+            var events = await _reader.ReadIcsFile(_icsFilePath, filter);
 
             return Ok(events);
         }
@@ -62,7 +62,7 @@ namespace Mathilda.Controllers
                 End = End
             };
 
-            var events = await _reader.ParseIcsFile(_path, filter);
+            var events = await _reader.ReadIcsFile(_icsFilePath, filter);
             var result = await _clockifyService.CreateMeetingTimeEntries(events);
             return Ok(result);
         }
@@ -83,8 +83,10 @@ namespace Mathilda.Controllers
                 End = requests.Max(a=> a.End)
             };
 
-            var events = await _reader.ParseIcsFile(_path, filter);
-            var result = await _clockifyService.CreateProductiveTimeEntries(events, requests);
+            var events = 
+                await _reader.ReadIcsFile(_icsFilePath, filter);
+            var result = 
+                await _clockifyService.CreateProductiveTimeEntries(events, requests);
             return Ok(result);
         }
 
@@ -96,7 +98,8 @@ namespace Mathilda.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _clockifyService.CreateReccurringMeetingTimeEntries(requests);
+            var result = 
+                await _clockifyService.CreateReccurringMeetingTimeEntries(requests);
             return Ok(result);
         }
     }
