@@ -72,6 +72,11 @@ namespace Mathilda
 
             foreach (var calendarEvent in calendar.Events)
             {
+                if (calendarEvent.Organizer == null)
+                {
+                    continue;
+                }
+
                 if (calendarEvent.RecurrenceRules != null && calendarEvent.RecurrenceRules.Count > 0)
                 {
                     var occurrences = calendarEvent.GetOccurrences(startDate, endDate);
@@ -107,7 +112,7 @@ namespace Mathilda
                     }
                 }
             }
-            return events.Where(x => x.Summary != "Home" && x.Summary  != "Office").OrderBy(e => e.Start).DistinctBy(x => x.Start).ToList();
+            return events.OrderBy(e => e.Start).DistinctBy(x => x.Start).ToList();
         }
 
 
