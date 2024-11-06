@@ -112,7 +112,8 @@ namespace Mathilda
                     }
                 }
             }
-            return events.OrderBy(e => e.Start).DistinctBy(x => x.Start).ToList();
+            //return events.OrderBy(e => e.Start).DistinctBy(x => x.Summary).ToList();
+            return events.OrderBy(e => e.Start).ToList();
         }
 
 

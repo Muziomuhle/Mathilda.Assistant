@@ -11,10 +11,18 @@ public interface ITicketService
 public class JiraService : ITicketService
 {
     private const string jqlCurrentUserActiveTickets = "assignee = currentuser() AND status WAS \"In Progress\" DURING (\"2024-10-01\", \"2024-11-05\")";
+    private readonly IConfiguration _configuration;
+    public JiraService(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
     public async Task<TicketsResponse> GetInProgressTickets(DateTime start, DateTime end)
     {
         // create a connection to JIRA using the Rest client
-        var jira = Jira.CreateRestClient("https://company.atlassian.net/", "EMAIL/USERNAMR", "API-TOKEN");
+        var jira = Jira.CreateRestClient(
+            _configuration.GetSection("Jira:BaseUrl").Value,
+            _configuration.GetSection("Jira:User").Value,
+            _configuration.GetSection("Jira:Token").Value);
 
         var response = new TicketsResponse()
         {
@@ -23,11 +31,11 @@ public class JiraService : ITicketService
         
         for (DateTime day = start; day <= end; day = day.AddDays(1))
         {
-            var issuesOnDay = jira.Issues.GetIssuesFromJqlAsync(
+            var issuesOnDay = await jira.Issues.GetIssuesFromJqlAsync(
                 new IssueSearchOptions(
                     $"assignee = currentuser() AND status WAS \"In Progress\" ON (\"{day:yyyy-MM-dd}\")"));
 
-            var ticketsOnDay = issuesOnDay.Result.Select(x => new TicketInfo()
+            var ticketsOnDay = issuesOnDay.Select(x => new TicketInfo()
             {
                 Summary = x.Summary,
                 TicketKey = x.Key.Value,
