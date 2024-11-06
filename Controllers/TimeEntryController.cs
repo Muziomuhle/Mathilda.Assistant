@@ -112,7 +112,7 @@ namespace Mathilda.Controllers
 
             var tickets = await _ticketService.GetInProgressTickets(Start, End);
 
-            return Ok();
+            return Ok(tickets);
         }
     }
 }
