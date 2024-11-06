@@ -11,15 +11,17 @@ namespace Mathilda.Controllers
         private readonly IConfiguration _configuration;
         private readonly IIcsReader _reader;
         private readonly IClockifyService _clockifyService;
+        private readonly ITicketService _ticketService;
         private readonly string _icsFilePath;
 
         public TimeEntryController(ILogger<TimeEntryController> logger, IConfiguration configuration, 
-            IIcsReader reader, IClockifyService clockifyService)
+            IIcsReader reader, IClockifyService clockifyService, ITicketService ticketService)
         {
             _logger = logger;
             _configuration = configuration;
             _reader = reader;
             _clockifyService = clockifyService;
+            _ticketService = ticketService;
             _icsFilePath = _configuration.GetSection("Paths:Ics").Value;
         }
 
@@ -101,6 +103,16 @@ namespace Mathilda.Controllers
             var result = 
                 await _clockifyService.CreateReccurringMeetingTimeEntries(requests);
             return Ok(result);
+        }
+        
+        [HttpGet("Tickets")]
+        public async Task<IActionResult> GetTickets([FromQuery] DateTime Start, [FromQuery] DateTime End)
+        {
+            // Not given we use current month.
+
+            var tickets = await _ticketService.GetInProgressTickets(Start, End);
+
+            return Ok();
         }
     }
 }
