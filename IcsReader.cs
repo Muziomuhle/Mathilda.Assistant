@@ -1,4 +1,5 @@
 ﻿using Ical.Net;
+using Ical.Net.DataTypes;
 using Mathilda.Extensions;
 using Mathilda.Models;
 
@@ -64,21 +65,51 @@ namespace Mathilda
         {
             var events = new List<CalendarEvent>();
             var calendarData = await File.ReadAllTextAsync(filePath);
-
             var calendar = Calendar.Load(calendarData);
 
-            events = calendar.Events.Select(e => new CalendarEvent()
-            {
-                Start = e.Start.Value,
-                End = e.End.Value,
-                Summary = e.Summary
-            }).ToList();
+            var startDate = f.Start;
+            var endDate = f.End;
 
-            if (f.EnableFilters)
-                return events
-                    .Where(e => e.Start >= f.Start && e.End <= f.End)
-                    .OrderBy(e => e.Start).ToList();
-            return events;
+            foreach (var calendarEvent in calendar.Events)
+            {
+                if (calendarEvent.RecurrenceRules != null && calendarEvent.RecurrenceRules.Count > 0)
+                {
+                    var occurrences = calendarEvent.GetOccurrences(startDate, endDate);
+                    foreach (var occurrence in occurrences)
+                    {
+                        var occurrenceStart = occurrence.Period.StartTime.AsSystemLocal;
+                        var occurrenceEnd = occurrence.Period.EndTime.AsSystemLocal;
+
+                        if (occurrenceStart >= startDate && occurrenceEnd <= endDate)
+                        {
+                            events.Add(new CalendarEvent
+                            {
+                                Start = occurrenceStart,
+                                End = occurrenceEnd,
+                                Summary = calendarEvent.Summary
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    var eventStart = calendarEvent.Start.AsSystemLocal;
+                    var eventEnd = calendarEvent.End.AsSystemLocal;
+
+                    if (eventStart >= startDate && eventEnd <= endDate)
+                    {
+                        events.Add(new CalendarEvent
+                        {
+                            Start = eventStart,
+                            End = eventEnd,
+                            Summary = calendarEvent.Summary
+                        });
+                    }
+                }
+            }
+            return events.Where(x => x.Summary != "Home" && x.Summary  != "Office").OrderBy(e => e.Start).DistinctBy(x => x.Start).ToList();
         }
+
+
     }
 }
