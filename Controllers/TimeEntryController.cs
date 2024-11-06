@@ -11,15 +11,17 @@ namespace Mathilda.Controllers
         private readonly IConfiguration _configuration;
         private readonly IIcsReader _reader;
         private readonly IClockifyService _clockifyService;
+        private readonly ITicketService _ticketService;
         private readonly string _icsFilePath;
 
         public TimeEntryController(ILogger<TimeEntryController> logger, IConfiguration configuration, 
-            IIcsReader reader, IClockifyService clockifyService)
+            IIcsReader reader, IClockifyService clockifyService, ITicketService ticketService)
         {
             _logger = logger;
             _configuration = configuration;
             _reader = reader;
             _clockifyService = clockifyService;
+            _ticketService = ticketService;
             _icsFilePath = _configuration.GetSection("Paths:Ics").Value;
         }
 
@@ -101,6 +103,53 @@ namespace Mathilda.Controllers
             var result = 
                 await _clockifyService.CreateReccurringMeetingTimeEntries(requests);
             return Ok(result);
+        }
+        
+        [HttpGet("Tickets")]
+        public async Task<IActionResult> GetTickets([FromQuery] DateTime Start, [FromQuery] DateTime End)
+        {
+            // Not given we use current month.
+
+            var tickets = await _ticketService.GetInProgressTickets(Start, End);
+
+            return Ok(tickets);
+        }
+        
+        [HttpPost("JiraTimeEntries")]
+        public async Task<IActionResult> ProcessTimeEntry([FromQuery] DateTime Start, [FromQuery] DateTime End)
+        {
+            // Not given we use current month.
+
+            var tickets = await _ticketService.GetInProgressTickets(Start, End);
+            
+            var filter = new CalendarFilters()
+            {
+                EnableFilters = true,
+                Start = Start,
+                End = End
+            };
+
+            var requests = new List<TimeEntryRequest>();
+            foreach (var ticketsOnDay in tickets.TicketsOnDays)
+            {
+               requests.Add(new TimeEntryRequest()
+               {
+                   Description = $"{ticketsOnDay.Tickets[0].TicketKey} | {ticketsOnDay.Tickets[0].Summary}",
+                   Start = ticketsOnDay.Date,
+                   End = ticketsOnDay.Date,
+                   TaskName = "Development"
+               }); 
+            }
+
+            var events = 
+                await _reader.ReadIcsFile(_icsFilePath, filter);
+            
+            var timeEntryResult = await _clockifyService.CreateMeetingTimeEntries(events);
+            
+            var productiveEntryResutls = 
+                await _clockifyService.CreateProductiveTimeEntries(events, requests);
+
+            return Ok(tickets);
         }
     }
 }

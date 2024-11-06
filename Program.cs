@@ -26,6 +26,7 @@ namespace Mathilda
                 c.BaseAddress = new Uri(builder.Configuration.GetSection("Clockify:BaseUrl").Value);
                 c.DefaultRequestHeaders.Add("x-api-key", builder.Configuration.GetSection("Clockify:ApiKey").Value);
             });
+            builder.Services.AddTransient<ITicketService, JiraService>();
 
             var app = builder.Build();
             IConfiguration config = app.Configuration;
