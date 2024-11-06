@@ -70,11 +70,21 @@ namespace Mathilda
             var startDate = f.Start;
             var endDate = f.End;
 
+            var publicHolidays = GetSouthAfricaPublicHolidays();
+
             foreach (var calendarEvent in calendar.Events)
             {
+                var eventStart = calendarEvent.Start.AsSystemLocal;
+                var eventEnd = calendarEvent.End.AsSystemLocal;
+
                 if (calendarEvent.Organizer == null)
                 {
                     continue;
+                }
+
+                if (publicHolidays.Contains(eventStart.Date))
+                {
+                    continue; 
                 }
 
                 if (calendarEvent.RecurrenceRules != null && calendarEvent.RecurrenceRules.Count > 0)
@@ -98,9 +108,6 @@ namespace Mathilda
                 }
                 else
                 {
-                    var eventStart = calendarEvent.Start.AsSystemLocal;
-                    var eventEnd = calendarEvent.End.AsSystemLocal;
-
                     if (eventStart >= startDate && eventEnd <= endDate)
                     {
                         events.Add(new CalendarEvent
@@ -115,6 +122,28 @@ namespace Mathilda
             return events.OrderBy(e => e.Start).DistinctBy(x => x.Start).ToList();
         }
 
+        private static List<DateTime> GetSouthAfricaPublicHolidays()
+        {
+            // Hardcoded list of South African public holidays for the year 2024
+            var publicHolidays = new List<DateTime>
+            {
+                new(2024, 1, 1),  // New Year's Day
+                new(2024, 3, 21), // Human Rights Day
+                new(2024, 3, 29), // Good Friday
+                new(2024, 4, 1),  // Family Day
+                new(2024, 4, 27), // Freedom Day
+                new(2024, 5, 1),  // Workers' Day
+                new(2024, 5, 29), // Public holiday (General Elections)
+                new(2024, 6, 16), // Youth Day
+                new(2024, 6, 17), // Public holiday Youth Day observed
+                new(2024, 8, 9),  // National Women’s Day
+                new(2024, 9, 24), // Heritage Day
+                new(2024, 12, 16), // Day of Reconciliation
+                new(2024, 12, 25), // Christmas Day
+                new(2024, 12, 26)  // Day of Goodwill
+            };
 
+            return publicHolidays;
+        }
     }
 }
