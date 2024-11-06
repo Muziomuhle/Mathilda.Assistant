@@ -143,7 +143,10 @@ namespace Mathilda.Controllers
 
             var events = 
                 await _reader.ReadIcsFile(_icsFilePath, filter);
-            var result = 
+            
+            var timeEntryResult = await _clockifyService.CreateMeetingTimeEntries(events);
+            
+            var productiveEntryResutls = 
                 await _clockifyService.CreateProductiveTimeEntries(events, requests);
 
             return Ok(tickets);
