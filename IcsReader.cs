@@ -85,7 +85,7 @@ namespace Mathilda
                         var occurrenceStart = occurrence.Period.StartTime.AsSystemLocal;
                         var occurrenceEnd = occurrence.Period.EndTime.AsSystemLocal;
 
-                        if (occurrenceStart >= startDate && occurrenceEnd <= endDate)
+                        if (occurrenceStart.Date >= startDate.Date && occurrenceEnd.Date <= endDate.Date)
                         {
                             events.Add(new CalendarEvent
                             {
@@ -101,7 +101,7 @@ namespace Mathilda
                     var eventStart = calendarEvent.Start.AsSystemLocal;
                     var eventEnd = calendarEvent.End.AsSystemLocal;
 
-                    if (eventStart >= startDate && eventEnd <= endDate)
+                    if (eventStart.Date >= startDate && eventEnd.Date <= endDate)
                     {
                         events.Add(new CalendarEvent
                         {
@@ -112,10 +112,12 @@ namespace Mathilda
                     }
                 }
             }
-            //return events.OrderBy(e => e.Start).DistinctBy(x => x.Summary).ToList();
-            return events.OrderBy(e => e.Start).ToList();
+
+            var grouped = events
+               .GroupBy(m => new { m.Start, m.Summary })
+               .Select(group => group.First()).ToList();
+
+            return grouped.OrderBy(e => e.Start).ToList();
         }
-
-
     }
 }
