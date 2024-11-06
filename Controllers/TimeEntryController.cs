@@ -114,5 +114,39 @@ namespace Mathilda.Controllers
 
             return Ok(tickets);
         }
+        
+        [HttpPost("JiraTimeEntries")]
+        public async Task<IActionResult> ProcessTimeEntry([FromQuery] DateTime Start, [FromQuery] DateTime End)
+        {
+            // Not given we use current month.
+
+            var tickets = await _ticketService.GetInProgressTickets(Start, End);
+            
+            var filter = new CalendarFilters()
+            {
+                EnableFilters = true,
+                Start = Start,
+                End = End
+            };
+
+            var requests = new List<TimeEntryRequest>();
+            foreach (var ticketsOnDay in tickets.TicketsOnDays)
+            {
+               requests.Add(new TimeEntryRequest()
+               {
+                   Description = $"{ticketsOnDay.Tickets[0].TicketKey} | {ticketsOnDay.Tickets[0].Summary}",
+                   Start = ticketsOnDay.Date,
+                   End = ticketsOnDay.Date,
+                   TaskName = "Development"
+               }); 
+            }
+
+            var events = 
+                await _reader.ReadIcsFile(_icsFilePath, filter);
+            var result = 
+                await _clockifyService.CreateProductiveTimeEntries(events, requests);
+
+            return Ok(tickets);
+        }
     }
 }
