@@ -132,6 +132,9 @@ namespace Mathilda.Controllers
             var requests = new List<TimeEntryRequest>();
             foreach (var ticketsOnDay in tickets.TicketsOnDays)
             {
+                if (!ticketsOnDay.Tickets.Any())
+                    continue;
+
                requests.Add(new TimeEntryRequest()
                {
                    Description = $"{ticketsOnDay.Tickets[0].TicketKey} | {ticketsOnDay.Tickets[0].Summary}",
@@ -146,8 +149,12 @@ namespace Mathilda.Controllers
             
             var timeEntryResult = await _clockifyService.CreateMeetingTimeEntries(events);
             
-            var productiveEntryResutls = 
-                await _clockifyService.CreateProductiveTimeEntries(events, requests);
+            if (requests.Any())
+            {
+                var productiveEntryResutls = 
+                    await _clockifyService.CreateProductiveTimeEntries(events, requests);
+            }
+          
 
             return Ok(tickets);
         }

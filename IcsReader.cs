@@ -74,6 +74,12 @@ namespace Mathilda
 
             foreach (var calendarEvent in calendar.Events)
             {
+                // Skip null dates
+                if (calendarEvent.Start == null || calendarEvent.End == null)
+                {
+                    continue;
+                }
+
                 var eventStart = calendarEvent.Start.AsSystemLocal;
                 var eventEnd = calendarEvent.End.AsSystemLocal;
 
@@ -108,7 +114,7 @@ namespace Mathilda
                 }
                 else
                 {
-                    if (eventStart.Date >= startDate && eventEnd.Date <= endDate)
+                    if (eventStart.Date >= startDate.Date && eventEnd.Date <= endDate.Date)
                     {
                         events.Add(new CalendarEvent
                         {
